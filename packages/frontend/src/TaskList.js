@@ -8,8 +8,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
 
 const PRIORITIES = ['P1', 'P2', 'P3'];
-const PRIORITY_UNSELECTED = '#7A7A7A';
-const PRIORITY_SELECTED = '#07F2E6';
+const PRIORITY_UNSELECTED = 'var(--priority-unselected)';
+const PRIORITY_SELECTED = 'var(--priority-selected)';
 
 function TaskList({ onEdit }) {
   const [tasks, setTasks] = useState([]);

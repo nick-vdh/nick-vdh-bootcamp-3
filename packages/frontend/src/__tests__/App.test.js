@@ -150,4 +150,50 @@ describe('TODO App', () => {
       expect(screen.getByText('No tasks found.')).toBeInTheDocument();
     });
   });
+
+  test('shows P1/P2/P3 buttons and defaults the selection to P3', async () => {
+    server.use(
+      rest.get('/api/tasks', (req, res, ctx) => {
+        return res(ctx.status(200), ctx.json([
+          { id: 1, title: 'Task A', description: '', due_date: null, completed: 0, priority: 'P3' },
+          { id: 2, title: 'Task B', description: '', due_date: null, completed: 0, priority: 'P1' },
+        ]));
+      })
+    );
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Priority P1' })).toHaveLength(2);
+    });
+    const p3Buttons = screen.getAllByRole('button', { name: 'Priority P3' });
+    const p1Buttons = screen.getAllByRole('button', { name: 'Priority P1' });
+    expect(p3Buttons[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(p3Buttons[1]).toHaveAttribute('aria-pressed', 'false');
+    expect(p1Buttons[1]).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('clicking a priority button sends a PATCH with that priority', async () => {
+    let patchBody = null;
+    server.use(
+      rest.get('/api/tasks', (req, res, ctx) => {
+        return res(ctx.status(200), ctx.json([
+          { id: 1, title: 'Task A', description: '', due_date: null, completed: 0, priority: 'P3' },
+        ]));
+      }),
+      rest.patch('/api/tasks/:id', (req, res, ctx) => {
+        patchBody = req.body;
+        return res(ctx.status(200), ctx.json({ id: 1, priority: req.body.priority }));
+      })
+    );
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<App />);
+    });
+    await user.click(await screen.findByRole('button', { name: 'Priority P1' }));
+    await waitFor(() => {
+      expect(patchBody).toEqual({ priority: 'P1' });
+    });
+    await screen.findByRole('button', { name: 'Priority P1' });
+  });
 });

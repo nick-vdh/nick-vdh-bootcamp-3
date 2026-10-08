@@ -56,4 +56,44 @@ describe('Tasks API', () => {
     const res = await request(app).delete(`/api/tasks/${taskId}`);
     expect(res.status).toBe(204);
   });
+
+  describe('priority', () => {
+    it('defaults to P3 when no priority is given', async () => {
+      const res = await request(app).post('/api/tasks').send({ title: 'No priority' });
+      expect(res.status).toBe(201);
+      expect(res.body.priority).toBe('P3');
+    });
+
+    it('stores an explicit priority on create', async () => {
+      const res = await request(app).post('/api/tasks').send({ title: 'Urgent', priority: 'P1' });
+      expect(res.status).toBe(201);
+      expect(res.body.priority).toBe('P1');
+    });
+
+    it('rejects an invalid priority on create', async () => {
+      const res = await request(app).post('/api/tasks').send({ title: 'Bad', priority: 'P4' });
+      expect(res.status).toBe(400);
+    });
+
+    it('updates priority via PATCH without changing completion', async () => {
+      const created = await request(app).post('/api/tasks').send({ title: 'Patch me' });
+      const res = await request(app).patch(`/api/tasks/${created.body.id}`).send({ priority: 'P2' });
+      expect(res.status).toBe(200);
+      expect(res.body.priority).toBe('P2');
+      expect(res.body.completed).toBe(0);
+    });
+
+    it('rejects an invalid priority on PATCH', async () => {
+      const created = await request(app).post('/api/tasks').send({ title: 'Patch me too' });
+      const res = await request(app).patch(`/api/tasks/${created.body.id}`).send({ priority: 'high' });
+      expect(res.status).toBe(400);
+    });
+
+    it('keeps priority when a task is edited via PUT', async () => {
+      const created = await request(app).post('/api/tasks').send({ title: 'Keep', priority: 'P1' });
+      const res = await request(app).put(`/api/tasks/${created.body.id}`).send({ title: 'Kept' });
+      expect(res.status).toBe(200);
+      expect(res.body.priority).toBe('P1');
+    });
+  });
 });
